@@ -39,9 +39,9 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
           case Some(transaction) => // Transaction error
             transaction.getStatus match {
               case Transaction.Status.PROCESSOR_DECLINED =>
-                throw new PaymentRejectedException(s"${transaction.getStatus}|${transaction.getProcessorResponseCode}|${transaction.getProcessorResponseText}")
+                throw PaymentRejectedException(s"${transaction.getStatus}|${transaction.getProcessorResponseCode}|${transaction.getProcessorResponseText}")
               case _ =>
-                throw new PaymentErrorException(s"${transaction.getStatus}|${transaction.getProcessorResponseCode}|${transaction.getProcessorResponseText}")
+                throw PaymentErrorException(s"${transaction.getStatus}|${transaction.getProcessorResponseCode}|${transaction.getProcessorResponseText}")
             }
           case None => // Validation error
             handleUnsuccessfulResult(result)
@@ -51,7 +51,7 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
       case Success(authorizationKey) => Success(authorizationKey)
       case Failure(e: BraintreeException) => Failure(new PaymentErrorException(message = e.getMessage, cause = e))
       case Failure(e: PaymentException) => Failure(e)
-      case Failure(e) => Failure(new PaymentErrorException(e.getMessage, e))
+      case Failure(e) => Failure(PaymentErrorException(e.getMessage, e))
     }
   }
 
@@ -80,7 +80,7 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
       case Success(transactionId) => Success(transactionId)
       case Failure(e: BraintreeException) => Failure(new PaymentErrorException(message = e.getMessage, cause = e))
       case Failure(e: PaymentException) => Failure(e)
-      case Failure(e) => Failure(new PaymentErrorException(e.getMessage, e))
+      case Failure(e) => Failure(PaymentErrorException(e.getMessage, e))
     }
   }
 
@@ -88,9 +88,9 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
     val error = result.getErrors.getAllDeepValidationErrors.head
     (error.getAttribute, error.getCode) match {
       case (ErrorAttributes.merchantAccountId, ValidationErrorCode.TRANSACTION_PAYMENT_INSTRUMENT_NOT_SUPPORTED_BY_MERCHANT_ACCOUNT) =>
-        throw new PaymentRejectedException(s"${error.getAttribute}|${error.getCode}|${error.getMessage}")
+        throw PaymentRejectedException(s"${error.getAttribute}|${error.getCode}|${error.getMessage}")
       case _ =>
-        throw new PaymentErrorException(s"${error.getAttribute}|${error.getCode}|${error.getMessage}")
+        throw PaymentErrorException(s"${error.getAttribute}|${error.getCode}|${error.getMessage}")
     }
   }
 
