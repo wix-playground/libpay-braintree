@@ -16,10 +16,10 @@ class JsonBraintreeMerchantParserTest extends SpecWithJUnit {
         merchantId = "some merchant ID",
         publicKey = "some public key",
         privateKey = "some private key",
-        merchantAccountIds = Map(
+        merchantAccountIds = Some(Map(
           "USD" -> "some merchant account ID",
           "EUR" -> "some other merchant account ID"
-        )
+        ))
       )
 
       val merchantKey = merchantParser.stringify(someMerchant)

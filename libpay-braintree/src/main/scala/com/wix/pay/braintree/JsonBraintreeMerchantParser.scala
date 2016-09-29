@@ -10,7 +10,7 @@ class JsonBraintreeMerchantParser() extends BraintreeMerchantParser {
     Serialization.read[BraintreeMerchant](merchantKey)
   }
 
-  override def stringify(merchant: BraintreeMerchant): String = {
+  override def stringify(merchant: BraintreeMerchantBase): String = {
     Serialization.write(merchant)
   }
 }

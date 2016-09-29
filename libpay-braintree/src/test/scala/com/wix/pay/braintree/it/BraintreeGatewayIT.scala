@@ -25,7 +25,7 @@ class BraintreeGatewayIT extends SpecWithJUnit {
     merchantId = "someMerchantID",
     publicKey = "somePublicKey",
     privateKey = "somePrivateKey",
-    merchantAccountIds = Map("USD" -> "someMerchantAccountID"))
+    merchantAccountIds = Some(Map("USD" -> "someMerchantAccountID")))
   val merchantKey = merchantParser.stringify(someMerchant)
   val someCurrencyAmount = CurrencyAmount("USD", 33.3)
   val someCreditCard = CreditCard(
