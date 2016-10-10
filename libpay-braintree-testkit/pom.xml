@@ -56,5 +56,10 @@
             <artifactId>google-http-client</artifactId>
             <version>${com.google.http.client.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>1.58</version>
+        </dependency>
     </dependencies>
 </project>

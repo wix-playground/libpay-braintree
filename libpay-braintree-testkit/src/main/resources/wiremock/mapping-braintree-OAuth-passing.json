@@ -1,0 +1,30 @@
+{
+  "request" : {
+    "url" : "/merchants/90210/transactions",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalToXml" : "<transaction><amount>33.3</amount><channel>someChannel</channel><creditCard><number>5555555555554444</number><expirationMonth>12</expirationMonth><expirationYear>2020</expirationYear></creditCard><billing></billing><options><submitForSettlement>true</submitForSettlement></options><type>sale</type></transaction>"
+    } ]
+  },
+  "response" : {
+    "status" : 201,
+    "bodyFileName" : "body-mapping-braintree-OAuth-passing.txt",
+    "headers" : {
+      "Date" : "Mon, 10 Oct 2016 08:04:35 GMT",
+      "Content-Type" : "application/xml; charset=utf-8",
+      "Transfer-Encoding" : "chunked",
+      "X-Frame-Options" : [ "SAMEORIGIN", "SAMEORIGIN" ],
+      "X-XSS-Protection" : "1; mode=block",
+      "X-Content-Type-Options" : "nosniff",
+      "X-Authentication" : "oauth_token",
+      "X-User" : "nmq6867m98f5zvxw",
+      "Vary" : "Accept-Encoding",
+      "Content-Encoding" : "gzip",
+      "ETag" : "W/\"ca1df9952094075a0e638364d7ce4937\"",
+      "Cache-Control" : "max-age=0, private, must-revalidate",
+      "X-Request-Id" : "0a9227ab-50ce-45eb-9fed-a53fc05cef08",
+      "X-Runtime" : "0.381820",
+      "Strict-Transport-Security" : "max-age=31536000; includeSubDomains"
+    }
+  }
+}
