@@ -2,7 +2,7 @@ package com.wix.pay.braintree
 
 
 import com.braintreegateway._
-import com.braintreegateway.exceptions.{AuthenticationException, AuthorizationException, BraintreeException}
+import com.braintreegateway.exceptions._
 import com.wix.pay.braintree.model.ErrorAttributes
 import com.wix.pay.creditcard.CreditCard
 import com.wix.pay.model.{CurrencyAmount, Customer, Deal}
@@ -50,15 +50,24 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
     } match {
       case Success(authorizationKey) => Success(authorizationKey)
       case Failure(e: BraintreeException) =>
-        val message = e match {
-          case e: AuthenticationException => "Credential authentication failed!"
-          case e: AuthorizationException => Option(e.getMessage).getOrElse("Authorization error! (Possibly wrong merchantAccountId)")
-          case _ => e.getMessage
-        }
+        val message = exceptionMessageFrom(e)
         Failure(new PaymentErrorException(message = message, cause = e))
       case Failure(e: PaymentException) => Failure(e)
       case Failure(e) => Failure(PaymentErrorException(e.getMessage, e))
     }
+  }
+
+  // https://developers.braintreepayments.com/reference/general/exceptions/java
+  private def exceptionMessageFrom(e: BraintreeException): String = e match {
+    case e: AuthenticationException => "Authentication error: API keys are incorrect!"
+    case e: AuthorizationException => Option(e.getMessage).getOrElse {
+      "Authorization error: API key is not authorized to perform the attempted action according to the role assigned! (Also possibly wrong merchantAccountId)"
+    }
+    case e: NotFoundException => "Requested braintree resource was not found!"
+    case e: UpgradeRequiredException => "Internal Error: Braintree SDK needs to be upgraded!"
+    case e: ServerException => "Internal Braintree error while processing request!"
+    case e: DownForMaintenanceException => "Braintree is currently down for maintenance!"
+    case _ => e.getMessage
   }
 
   override def authorize(merchantKey: String, creditCard: CreditCard, currencyAmount: CurrencyAmount, customer: Option[Customer], deal: Option[Deal]): Try[String] = {
