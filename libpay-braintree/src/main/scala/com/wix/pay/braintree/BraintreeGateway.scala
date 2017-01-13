@@ -2,7 +2,7 @@ package com.wix.pay.braintree
 
 
 import com.braintreegateway._
-import com.braintreegateway.exceptions.BraintreeException
+import com.braintreegateway.exceptions.{AuthenticationException, AuthorizationException, BraintreeException}
 import com.wix.pay.braintree.model.ErrorAttributes
 import com.wix.pay.creditcard.CreditCard
 import com.wix.pay.model.{CurrencyAmount, Customer, Deal}
@@ -49,7 +49,13 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
       }
     } match {
       case Success(authorizationKey) => Success(authorizationKey)
-      case Failure(e: BraintreeException) => Failure(new PaymentErrorException(message = e.getMessage, cause = e))
+      case Failure(e: BraintreeException) =>
+        val message = e match {
+          case e: AuthenticationException => "Credential authentication failed!"
+          case e: AuthorizationException => Option(e.getMessage).getOrElse("Authorization error! (Possibly wrong merchantAccountId)")
+          case _ => e.getMessage
+        }
+        Failure(new PaymentErrorException(message = message, cause = e))
       case Failure(e: PaymentException) => Failure(e)
       case Failure(e) => Failure(PaymentErrorException(e.getMessage, e))
     }
