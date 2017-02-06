@@ -5,7 +5,7 @@ import com.braintreegateway.Environment
 import com.wix.pay.braintree._
 import com.wix.pay.braintree.testkit.BraintreeDriver
 import com.wix.pay.creditcard.{CreditCard, CreditCardOptionalFields, YearMonth}
-import com.wix.pay.model.CurrencyAmount
+import com.wix.pay.model.{CurrencyAmount, Payment}
 import com.wix.pay.{PaymentErrorException, PaymentGateway, PaymentRejectedException}
 import org.specs2.mutable.SpecWithJUnit
 import org.specs2.specification.Scope
@@ -28,6 +28,7 @@ class BraintreeGatewayIT extends SpecWithJUnit {
     merchantAccountIds = Map("USD" -> "someMerchantAccountID"))
   val merchantKey = merchantParser.stringify(someMerchant)
   val someCurrencyAmount = CurrencyAmount("USD", 33.3)
+  val somePayment = Payment(someCurrencyAmount, 1)
   val someCreditCard = CreditCard(
     "4580458045804580",
     YearMonth(2020, 12),
@@ -68,7 +69,7 @@ class BraintreeGatewayIT extends SpecWithJUnit {
       braintree.sale(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount
+        payment = somePayment
       ) must beAFailedTry(
         check = beAnInstanceOf[PaymentRejectedException]
       )
@@ -87,7 +88,7 @@ class BraintreeGatewayIT extends SpecWithJUnit {
       braintree.authorize(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount
+        payment = somePayment
       ) must beAFailedTry(
         check = beAnInstanceOf[PaymentErrorException]
       )
@@ -107,7 +108,7 @@ class BraintreeGatewayIT extends SpecWithJUnit {
       braintree.authorize(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount
+        payment = somePayment
       ) must beASuccessfulTry(
         check = ===(authorizationKey)
       )
@@ -124,7 +125,7 @@ class BraintreeGatewayIT extends SpecWithJUnit {
       braintree.authorize(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount
+        payment = somePayment
       ) must beAFailedTry(
         check = beAnInstanceOf[PaymentRejectedException]
       )

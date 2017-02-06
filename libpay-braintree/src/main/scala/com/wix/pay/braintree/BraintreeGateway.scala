@@ -5,7 +5,7 @@ import com.braintreegateway._
 import com.braintreegateway.exceptions.BraintreeException
 import com.wix.pay.braintree.model.ErrorAttributes
 import com.wix.pay.creditcard.CreditCard
-import com.wix.pay.model.{CurrencyAmount, Customer, Deal}
+import com.wix.pay.model.{CurrencyAmount, Customer, Deal, Payment}
 import com.wix.pay.{PaymentErrorException, PaymentException, PaymentGateway, PaymentRejectedException}
 
 import scala.collection.JavaConversions._
@@ -55,8 +55,9 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
     }
   }
 
-  override def authorize(merchantKey: String, creditCard: CreditCard, currencyAmount: CurrencyAmount, customer: Option[Customer], deal: Option[Deal]): Try[String] = {
-    createTransaction(merchantKey, creditCard, currencyAmount, submitForSettlement = false) match {
+  override def authorize(merchantKey: String, creditCard: CreditCard, payment: Payment, customer: Option[Customer], deal: Option[Deal]): Try[String] = {
+    require(payment.installments == 1, "Braintree does not support installments")
+    createTransaction(merchantKey, creditCard, payment.currencyAmount, submitForSettlement = false) match {
       case Success(transactionId) => Success(authorizationParser.stringify(BraintreeAuthorization(transactionId)))
       case Failure(e) => Failure(e)
     }
@@ -94,8 +95,9 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
     }
   }
 
-  override def sale(merchantKey: String, creditCard: CreditCard, currencyAmount: CurrencyAmount, customer: Option[Customer], deal: Option[Deal]): Try[String] = {
-    createTransaction(merchantKey, creditCard, currencyAmount, submitForSettlement = true)
+  override def sale(merchantKey: String, creditCard: CreditCard, payment: Payment, customer: Option[Customer], deal: Option[Deal]): Try[String] = {
+    require(payment.installments == 1, "Braintree does not support installments")
+    createTransaction(merchantKey, creditCard, payment.currencyAmount, submitForSettlement = true)
   }
 
   override def voidAuthorization(merchantKey: String, authorizationKey: String): Try[String] = {
