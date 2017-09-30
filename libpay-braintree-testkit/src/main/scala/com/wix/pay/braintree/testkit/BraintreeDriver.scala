@@ -8,8 +8,9 @@ import com.wix.pay.model.CurrencyAmount
 import spray.http._
 
 
-class BraintreeDriver(port: Int) {
-  private val probe = new EmbeddedHttpProbe(port, EmbeddedHttpProbe.NotFoundHandler)
+class BraintreeDriver(probe: EmbeddedHttpProbe) {
+  def this(port: Int) = this(new EmbeddedHttpProbe(port, EmbeddedHttpProbe.NotFoundHandler))
+
   private val xmlContentType = ContentType(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`)
 
   def startProbe() {
