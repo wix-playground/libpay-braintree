@@ -30,7 +30,7 @@ class BraintreeHelperTest extends SpecWithJUnit {
   }
 
   "createTransactionRequest" should {
-    val someMerchantAccountId = "some merchant account ID"
+    val someMerchantAccountId = Some("some merchant account ID")
     val someCard = CreditCard(
       number = "4580458045804580",
       expiration = YearMonth(

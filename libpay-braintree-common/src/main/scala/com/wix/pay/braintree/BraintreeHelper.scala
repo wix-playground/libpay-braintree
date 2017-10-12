@@ -4,16 +4,17 @@ import com.braintreegateway.TransactionRequest
 import com.wix.pay.creditcard.CreditCard
 
 object BraintreeHelper {
-  def createTransactionRequest(merchantAccountId: String,
+  def createTransactionRequest(merchantAccountId: Option[String],
                                creditCard: CreditCard,
                                amount: Double,
                                channel: Option[String] = None,
                                submitForSettlement: Boolean): TransactionRequest = {
     val request = new TransactionRequest().
-      merchantAccountId(merchantAccountId).
       amount(toBraintreeAmount(amount))
 
-    channel.foreach { request.channel }
+    merchantAccountId foreach request.merchantAccountId
+
+    channel foreach request.channel
 
     val creditCardRequest = request.creditCard()
     val billingAddress = request.billingAddress()

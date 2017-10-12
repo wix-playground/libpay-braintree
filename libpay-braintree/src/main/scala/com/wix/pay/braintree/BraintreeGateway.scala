@@ -16,6 +16,16 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
                        environment: Environment,
                        channel: Option[String] = None) extends PaymentGateway {
 
+
+  private def createBraintreeGateway(merchant: BraintreeMerchantBase): com.braintreegateway.BraintreeGateway = {
+    merchant match {
+      case m: BraintreeMerchant => new com.braintreegateway.BraintreeGateway(
+        environment, m.merchantId, m.publicKey, m.privateKey)
+      case m: BraintreeOAuthMerchant => new com.braintreegateway.BraintreeGateway(m.token)
+    }
+  }
+
+
   private def createTransaction(merchantKey: String,
                                 creditCard: CreditCard,
                                 currencyAmount: CurrencyAmount,
@@ -23,9 +33,9 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
     Try {
       val merchant = merchantParser.parse(merchantKey)
 
-      val braintree = new com.braintreegateway.BraintreeGateway(
-        environment, merchant.merchantId, merchant.publicKey, merchant.privateKey)
-      val merchantAccountId = merchant.merchantAccountIds(currencyAmount.currency)
+      val braintree = createBraintreeGateway(merchant)
+
+      val merchantAccountId: Option[String] = merchant.merchantAccountIds.map(accountIds => accountIds(currencyAmount.currency))
 
       // Transaction
       val request = BraintreeHelper.createTransactionRequest(merchantAccountId, creditCard, currencyAmount.amount, channel, submitForSettlement)
@@ -68,8 +78,7 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
       val merchant = merchantParser.parse(merchantKey)
       val authorization = authorizationParser.parse(authorizationKey)
 
-      val braintree = new com.braintreegateway.BraintreeGateway(
-        environment, merchant.merchantId, merchant.publicKey, merchant.privateKey)
+      val braintree = createBraintreeGateway(merchant)
 
       val result = braintree.transaction.submitForSettlement(authorization.transactionId, BraintreeHelper.toBraintreeAmount(amount))
       if (result.isSuccess) {
@@ -105,8 +114,7 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
       val merchant = merchantParser.parse(merchantKey)
       val authorization = authorizationParser.parse(authorizationKey)
 
-      val braintree = new com.braintreegateway.BraintreeGateway(
-        environment, merchant.merchantId, merchant.publicKey, merchant.privateKey)
+      val braintree = createBraintreeGateway(merchant)
 
       val result = braintree.transaction.voidTransaction(authorization.transactionId)
       if (result.isSuccess) {
