@@ -30,7 +30,11 @@ class BraintreeDriver(probe: EmbeddedHttpProbe) {
                             privateKey: String,
                             currencyAmount: CurrencyAmount,
                             creditCard: CreditCard): CreateSaleCtx = {
-    new CreateSaleCtx(merchantId, publicKey, privateKey, currencyAmount, creditCard)
+    new CreateSaleCtx(merchantId, publicKey, privateKey, Some(currencyAmount), Some(creditCard))
+  }
+
+  def anySaleRequestFor(merchantId: String, publicKey: String, privateKey: String): CreateSaleCtx = {
+    new CreateSaleCtx(merchantId, publicKey, privateKey, None, None)
   }
 
   abstract class Ctx(val resource: String) {
@@ -52,8 +56,8 @@ class BraintreeDriver(probe: EmbeddedHttpProbe) {
   class CreateSaleCtx(merchantId: String,
                       publicKey: String,
                       privateKey: String,
-                      currencyAmount: CurrencyAmount,
-                      creditCard: CreditCard) extends Ctx(s"/merchants/$merchantId/transactions") {
+                      currencyAmount: Option[CurrencyAmount],
+                      creditCard: Option[CreditCard]) extends Ctx(s"/merchants/$merchantId/transactions") {
 
     def succeedsWith(transactionId: String) {
       probe.handlers += {
