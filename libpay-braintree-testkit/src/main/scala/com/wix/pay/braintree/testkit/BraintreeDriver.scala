@@ -10,8 +10,9 @@ import com.wix.pay.creditcard.CreditCard
 import com.wix.pay.model.CurrencyAmount
 
 
-class BraintreeDriver(port: Int) {
-  private val server: StubWebServer = aStubWebServer.onPort(port).build
+class BraintreeDriver(server: StubWebServer) {
+  def this(port: Int) = this(aStubWebServer.onPort(port).build)
+
   private val xmlContentType = ContentType(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`)
 
   def start(): Unit = server.start()
