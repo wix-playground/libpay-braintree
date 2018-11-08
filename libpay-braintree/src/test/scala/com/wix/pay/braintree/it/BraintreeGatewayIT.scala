@@ -1,8 +1,6 @@
 package com.wix.pay.braintree.it
 
 
-import org.specs2.mutable.SpecWithJUnit
-import org.specs2.specification.Scope
 import akka.http.scaladsl.model.StatusCodes
 import com.braintreegateway.Environment
 import com.wix.pay.braintree._
@@ -10,6 +8,10 @@ import com.wix.pay.braintree.testkit.BraintreeDriver
 import com.wix.pay.creditcard.{CreditCard, CreditCardOptionalFields, YearMonth}
 import com.wix.pay.model.{CurrencyAmount, Payment}
 import com.wix.pay.{PaymentErrorException, PaymentGateway, PaymentRejectedException}
+import org.specs2.mutable.SpecWithJUnit
+import org.specs2.specification.Scope
+
+import scala.util.Try
 
 
 class BraintreeGatewayIT extends SpecWithJUnit {
@@ -72,6 +74,22 @@ class BraintreeGatewayIT extends SpecWithJUnit {
         creditCard = someCreditCard,
         payment = somePayment) must beAFailedTry(check = beAnInstanceOf[PaymentRejectedException])
     }
+
+    "gracefully fail on invalid card number with transactionId" in new Ctx {
+      private val givenTransactionId: Some[String] = Some("Transaction_id")
+      driver.aCreateSaleRequestFor(
+        someMerchant.merchantId,
+        someMerchant.publicKey,
+        someMerchant.privateKey,
+        someCurrencyAmount,
+        someCreditCard) failsOnInvalidCardNumber givenTransactionId
+
+      private val triedString: Try[String] = braintree.sale(
+        merchantKey = merchantKey,
+        creditCard = someCreditCard,
+        payment = somePayment)
+      triedString must beAFailedTry(check = beEqualTo(PaymentRejectedException("PROCESSOR_DECLINED|SomeCode|SomeText", transactionId = givenTransactionId)) )
+    }
   }
 
 
@@ -120,6 +138,23 @@ class BraintreeGatewayIT extends SpecWithJUnit {
         creditCard = someCreditCard,
         payment = somePayment) must beAFailedTry(check = beAnInstanceOf[PaymentRejectedException])
     }
+
+    "gracefully fail on unrecognized transaction status" in new Ctx {
+      private val givenTransactionId: Some[String] = Some("Transaction_id")
+      driver.aCreateSaleRequestFor(
+        someMerchant.merchantId,
+        someMerchant.publicKey,
+        someMerchant.privateKey,
+        someCurrencyAmount,
+        someCreditCard) failsOnInvalidCardNumber(givenTransactionId, Some("SomeDummyStatus"))
+
+      private val triedString: Try[String] = braintree.sale(
+        merchantKey = merchantKey,
+        creditCard = someCreditCard,
+        payment = somePayment)
+      triedString must beAFailedTry(check = beEqualTo(PaymentErrorException("UNRECOGNIZED|SomeCode|SomeText", transactionId = givenTransactionId)) )
+    }
+
   }
 
 
