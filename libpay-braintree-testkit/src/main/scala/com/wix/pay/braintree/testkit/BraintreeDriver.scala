@@ -9,6 +9,8 @@ import com.wix.e2e.http.server.WebServerFactory._
 import com.wix.pay.creditcard.CreditCard
 import com.wix.pay.model.CurrencyAmount
 
+import scala.xml.NodeSeq
+
 
 class BraintreeDriver(server: StubWebServer) {
   def this(port: Int) = this(aStubWebServer.onPort(port).build)
@@ -16,7 +18,9 @@ class BraintreeDriver(server: StubWebServer) {
   private val xmlContentType = ContentType(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`)
 
   def start(): Unit = server.start()
+
   def stop(): Unit = server.stop()
+
   def reset(): Unit = server.replaceWith()
 
 
@@ -39,11 +43,11 @@ class BraintreeDriver(server: StubWebServer) {
     def errors(statusCode: StatusCode) {
       server.appendAll {
         case HttpRequest(
-          HttpMethods.POST,
-          Path(`resource`),
-          headers,
-          entity,
-          _) if isStubbedRequestEntity(entity, headers) => HttpResponse(status = statusCode)
+        HttpMethods.POST,
+        Path(`resource`),
+        headers,
+        entity,
+        _) if isStubbedRequestEntity(entity, headers) => HttpResponse(status = statusCode)
       }
     }
   }
@@ -57,48 +61,48 @@ class BraintreeDriver(server: StubWebServer) {
     def succeedsWith(transactionId: String) {
       server.appendAll {
         case HttpRequest(
-            HttpMethods.POST,
-            Path(`resource`),
-            headers,
-            entity,
-            _) if isStubbedRequestEntity(entity, headers) =>
-              HttpResponse(
-                status = StatusCodes.OK,
-                entity = HttpEntity(
-                  xmlContentType,
-                  createSuccessfulResponseXml(transactionId)))
+        HttpMethods.POST,
+        Path(`resource`),
+        headers,
+        entity,
+        _) if isStubbedRequestEntity(entity, headers) =>
+          HttpResponse(
+            status = StatusCodes.OK,
+            entity = HttpEntity(
+              xmlContentType,
+              createSuccessfulResponseXml(transactionId)))
       }
     }
 
     def failsWith(status: String) {
       server.appendAll {
         case HttpRequest(
-          HttpMethods.POST,
-          Path(`resource`),
-          headers,
-          entity,
-          _) if isStubbedRequestEntity(entity, headers) =>
-            HttpResponse(
-              status = StatusCodes.OK,
-              entity = HttpEntity(
-                xmlContentType,
-                createErrorResponseXml(status)))
+        HttpMethods.POST,
+        Path(`resource`),
+        headers,
+        entity,
+        _) if isStubbedRequestEntity(entity, headers) =>
+          HttpResponse(
+            status = StatusCodes.OK,
+            entity = HttpEntity(
+              xmlContentType,
+              createErrorResponseXml(status)))
       }
     }
 
-    def failsOnInvalidCardNumber() {
+    def failsOnInvalidCardNumber(transactionId: Option[String] = None, status: Option[String] = None) {
       server.appendAll {
         case HttpRequest(
-          HttpMethods.POST,
-          Uri.Path(`resource`),
-          headers,
-          entity,
-          _) if isStubbedRequestEntity(entity, headers) =>
-            HttpResponse(
-              status = StatusCodes.OK,
-              entity = HttpEntity(
-                xmlContentType,
-                createInvalidCardNumberXml()))
+        HttpMethods.POST,
+        Uri.Path(`resource`),
+        headers,
+        entity,
+        _) if isStubbedRequestEntity(entity, headers) =>
+          HttpResponse(
+            status = StatusCodes.OK,
+            entity = HttpEntity(
+              xmlContentType,
+              createInvalidCardNumberXml(transactionId, status)))
       }
     }
 
@@ -119,7 +123,9 @@ class BraintreeDriver(server: StubWebServer) {
 
     private def createSuccessfulResponseXml(transactionId: String): String = {
       <transaction>
-        <id>{transactionId}</id>
+        <id>
+          {transactionId}
+        </id>
         <status>authorized</status>
         <type>sale</type>
         <currency-iso-code>USD</currency-iso-code>
@@ -142,7 +148,8 @@ class BraintreeDriver(server: StubWebServer) {
           <id nil="true"/>
           <first-name nil="true"/>
           <last-name nil="true"/>
-          <company nil="true"/>\
+          <company nil="true"/>
+          \
           <street-address>7 Hashomron st</street-address>
           <extended-address nil="true"/>
           <locality nil="true"/>
@@ -249,7 +256,7 @@ class BraintreeDriver(server: StubWebServer) {
       </transaction>.toString
     }
 
-    private def createInvalidCardNumberXml(): String = {
+    private def createInvalidCardNumberXml(transactionId: Option[String], status: Option[String]): String = {
       <api-error-response>
         <errors>
           <errors type="array"/>
@@ -271,7 +278,32 @@ class BraintreeDriver(server: StubWebServer) {
               </errors>
             </credit-card>
           </transaction>
-        </errors>
+        </errors>{transactionId.map(x =>
+        <transaction>
+          <id>
+            {x}
+          </id>
+          <amount>100.0</amount>
+          <customer></customer>
+          <disbursement-details></disbursement-details>
+          <descriptor></descriptor>
+          <shipping></shipping>
+          <subscription></subscription>
+          <merchant-account-id>SOME_MERCHANT_ACCOUNT_ID</merchant-account-id>
+          <status>{status.getOrElse("PROCESSOR_DECLINED")}</status>
+          <processor-response-code>SomeCode</processor-response-code>
+          <processor-response-text>SomeText</processor-response-text>
+          <credit-card>
+            <expiration-month>05</expiration-month>
+            <expiration-year>2016</expiration-year>
+          </credit-card>
+          <billing nil="true"/>
+          <options>
+            <submit-for-settlement>true</submit-for-settlement>
+          </options>
+          <type>sale</type>
+        </transaction>
+      ).getOrElse(NodeSeq.Empty)}
         <params>
           <transaction>
             <amount>100.0</amount>
@@ -291,7 +323,7 @@ class BraintreeDriver(server: StubWebServer) {
       </api-error-response>.toString
     }
 
-    private def createErrorResponseXml(status: String): String = {
+    private def createErrorResponseXml(status: String, transactionId: Option[String] = None): String = {
       <api-error-response>
         <errors>
           <errors type="array"/>
@@ -317,8 +349,12 @@ class BraintreeDriver(server: StubWebServer) {
         </params>
         <message>Processor Declined</message>
         <transaction>
-          <id>mj4m3cm</id>
-          <status>{status}</status>
+          <id>
+            {transactionId.getOrElse("mj4m3cm")}
+          </id>
+          <status>
+            {status}
+          </status>
           <type>sale</type>
           <currency-iso-code>USD</currency-iso-code>
           <amount>33.30</amount>
@@ -456,4 +492,5 @@ class BraintreeDriver(server: StubWebServer) {
       true
     }
   }
+
 }

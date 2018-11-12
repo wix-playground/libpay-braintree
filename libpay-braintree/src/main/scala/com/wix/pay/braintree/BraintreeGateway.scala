@@ -39,15 +39,15 @@ class BraintreeGateway(merchantParser: BraintreeMerchantParser = new JsonBraintr
           case Some(transaction) => // Transaction error
             transaction.getStatus match {
               case Transaction.Status.PROCESSOR_DECLINED =>
-                throw PaymentRejectedException(s"${transaction.getStatus}|${transaction.getProcessorResponseCode}|${transaction.getProcessorResponseText}")
+                throw PaymentRejectedException(s"${transaction.getStatus}|${transaction.getProcessorResponseCode}|${transaction.getProcessorResponseText}", transactionId = Option(transaction.getId))
               case _ =>
-                throw PaymentErrorException(s"${transaction.getStatus}|${transaction.getProcessorResponseCode}|${transaction.getProcessorResponseText}")
+                throw PaymentErrorException(s"${transaction.getStatus}|${transaction.getProcessorResponseCode}|${transaction.getProcessorResponseText}", transactionId = Option(transaction.getId))
             }
           case None => // Validation error
             handleUnsuccessfulResult(result)
         }
       }
-    } match {
+    }  match {
       case Success(authorizationKey) => Success(authorizationKey)
       case Failure(e: BraintreeException) => Failure(new PaymentErrorException(message = e.getMessage, cause = e))
       case Failure(e: PaymentException) => Failure(e)
